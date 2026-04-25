@@ -27,6 +27,7 @@ filtros-auto/
 │
 ├── .gitignore          # arquivos ignorados pelo Git
 ├── requirements.txt    # dependências do projeto
+├── INICIAR.bat         # atalho para início do sistema
 └── README.md           # este arquivo
 ```
 
@@ -82,7 +83,7 @@ O arquivo `data/catalogo.csv` usa `;` como separador e deve conter as colunas:
 
 ## 🚀 Atalho para a Oficina (Windows)
 
-Para facilitar o uso no dia a dia, o projeto inclui um arquivo `.bat` que permite abrir o sistema com apenas dois cliques, sem precisar abrir o terminal manualmente.
+Para facilitar o uso no dia a dia, o projeto inclui um arquivo `.bat` que permite criar o ambiente, instalar as bibliotecas e abrir o sistema com apenas dois cliques, sem precisar abrir o terminal manualmente.
 
 1. Localize o arquivo `Iniciar_Sistema.bat` na pasta raiz.
 2. (Opcional) Clique com o botão direito e selecione **Enviar para > Área de trabalho (criar atalho)**.
