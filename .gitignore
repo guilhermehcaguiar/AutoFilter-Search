@@ -1,0 +1,19 @@
+# Cache do Python
+# Gerado automaticamente quando você roda qualquer script .py
+__pycache__/
+*.py[cod]
+
+# Cache do Streamlit
+# Criado na pasta do projeto quando o app roda
+.streamlit/
+
+# Ambiente virtual
+# Se você criar um venv dentro da pasta, ele não vai pro GitHub
+venv/
+.env/
+env/
+
+# Arquivos de sistema
+# Criado pelo Windows Explorer e pelo macOS Finder
+Thumbs.db
+.DS_Store
