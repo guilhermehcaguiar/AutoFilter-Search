@@ -9,7 +9,8 @@ Sistema de consulta de filtros automotivos desenvolvido para uso interno em ofic
 - **Menu Multi-Módulos**: Navegação centralizada entre diferentes catálogos de peças.
 - **Módulo Revisão Básica**: Busca rápida por códigos de **Filtros de Ar, Óleo, Combustível e Cabine**.
 - **Módulo Palhetas**: Busca de palhetas **Dianteiras (Condutor/Passageiro), Traseiras e Tipos de Encaixe**.
-- **Módulo Câmbio**: *(Em desenvolvimento)* Preparado para consulta de filtros de transmissão
+- **Módulo Câmbio**: Consulta de filtros de transmissão **Filtros, Código da transmissão**.
+- **Função de conversão**: Informa as referências cruzadas dos filtros (Wega -- Tecfil).
 - **Busca Encadeada Inteligente**: O assistente filtra em 4 etapas lógicas: **Montadora → Modelo Base → Ano → Versão/Geração**.
 - **Tratamento de Dados**: 
   - Converte anos de 2 dígitos automaticamente (ex: `95` → `1995`).
