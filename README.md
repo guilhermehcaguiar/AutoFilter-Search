@@ -92,6 +92,26 @@ Os arquivos dentro da pasta data/ (ou na raiz) devem usar ; como separador. As 5
 | `Palheta_Traseira` | Código(s) vidro traseiro |
 | `Tipo_Gancho` | Padrão do encaixe (ex: G, TL1, SL1) |
 
+### 3. Câmbio (cambio.csv)
+| Coluna | Descrição |
+|---|---|
+| `Nome_Montadora` | Fabricante | `Audi`, `BMW`, `Toyota` |
+| `Nome_Modelo` | Modelo do veículo (ex: A3, Corolla, Golf) |
+| `Ano_Inicio` | Ano inicial de vigência (2 ou 4 dígitos) |
+| `Ano_Fim` | Ano final (vazio = vigente até hoje) |
+| `Classificacao_Modelo` | Versão/motor específico |
+| `Filtro_Cambio` | Códigos de referência técnica do filtro (ex: WOEC-003, WOEC-005) |
+| `Codigo_Cambio` | Código oficial ou família da transmissão (ex: DSG, ZF 8HP)
+
+### 4. Conversão (conversao.csv)
+| Coluna | Descrição |
+|---|---|
+| `Tipo_Filtro` | Tipo de filtro (ex: Óleo, Combustível) |
+| `Codigo_Wega` | Referência pela Wega (ex: WO120, FAP3286) |
+| `Codigo_Tecfil` | Referência pela Tecfil (ex: PSL55, ARL8830) |
+
+
+
 ---
 
 ## 🛠️ Tecnologias
