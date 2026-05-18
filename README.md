@@ -26,9 +26,10 @@ AutoFilter-Search/
 ├── app.py              # Código fonte principal do sistema
 │
 ├── data/
-│   ├── catalogo.csv    # Base de dados dos filtros (Revisão)
+│   ├── cambio.csv      # Base de dados de transmissão (Câmbio)
+|   ├── catalogo.csv    # Base de dados dos filtros (Revisão)
+|   ├── conversao       # Base de dados para conversão de referências entre wega e tecfil
 │   ├── palhetas.csv    # Base de dados de limpadores (Palhetas)
-│   └── cambio.csv      # Base de dados de transmissão (Em breve)
 │
 ├── .gitignore          # Arquivos ignorados pelo Git 
 ├── requirements.txt    # Bibliotecas dependentes do projeto

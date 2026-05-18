@@ -15,14 +15,12 @@ st.set_page_config(
 # ─── ESTILOS (TEMA DINÂMICO E OCULTAÇÃO DE MENUS) ─────────────────────────────
 st.markdown("""
 <style>
-/* Importando a fonte INTER (famosa por ser ultra lisa e não serrilhar) */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 #MainMenu {visibility: hidden;}
 header {visibility: hidden;}
 footer {visibility: hidden;}
 
-/* Suavização de fontes (Anti-aliasing) + Fonte Inter */
 html, body, [class*="css"] { 
     font-family: 'Inter', system-ui, -apple-system, sans-serif; 
     -webkit-font-smoothing: antialiased;
@@ -64,6 +62,7 @@ html, body, [class*="css"] {
 .main-header h1 {
     font-weight: 900; color: var(--text-title);
     margin: 0; letter-spacing: -0.02em; text-transform: uppercase;
+    font-size: 2.2rem;
 }
 .main-header .subtitle {
     font-size: 0.85rem; font-weight: 500; color: var(--text-sub); margin: 0;
@@ -78,13 +77,14 @@ html, body, [class*="css"] {
 }
 .menu-card:hover { border-color: #2ecc71; transform: translateY(-5px); }
 .menu-icon { font-size: 3rem; margin-bottom: 1rem; display: block; }
-.menu-title { font-weight: 800; font-size: 1.4rem; color: var(--text-title); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: -0.02em;}
+.menu-title { font-weight: 800; font-size: 1.5rem; color: var(--text-title); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: -0.02em;}
 .menu-desc { color: var(--text-sub); font-size: 0.9rem; font-weight: 400; margin-bottom: 1.5rem; }
 
 .steps-bar {
     display: flex; align-items: center; margin-bottom: 2rem;
     background: var(--bg-card); border-radius: 12px;
     padding: 1rem 1.5rem; border: 1px solid var(--border-line);
+    overflow-x: auto; white-space: nowrap;
 }
 .step-item { display: flex; align-items: center; gap: 0.5rem; flex: 1; }
 .step-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; flex-shrink: 0; }
@@ -97,9 +97,7 @@ html, body, [class*="css"] {
 .step-arrow { color: var(--border-line); font-size: 1rem; margin: 0 0.5rem; }
 
 .select-title { font-weight: 800; font-size: 1.1rem; color: #2ecc71; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem; }
-.select-hint { font-size: 0.82rem; color: var(--text-sub); margin-bottom: 1.2rem; }
 .stSelectbox > div > div { background-color: var(--bg-card) !important; border: 2px solid var(--border-line) !important; border-radius: 8px !important; color: var(--text-title) !important; font-size: 1rem !important; font-weight: 500 !important; }
-.stSelectbox > div > div:focus-within { border-color: #2ecc71 !important; box-shadow: 0 0 0 1px #2ecc71 !important; }
 .orange-divider { height: 3px; background: linear-gradient(90deg, #2ecc71, transparent); border: none; margin: 1.5rem 0; border-radius: 2px; }
 
 .stButton > button { font-weight: 700 !important; font-size: 0.95rem !important; text-transform: uppercase !important; letter-spacing: 0.05em !important; padding: 0.6rem 2rem !important; border-radius: 8px !important; transition: all 0.2s !important; }
@@ -122,13 +120,13 @@ html, body, [class*="css"] {
 
 # ─── FUNÇÕES UTILITÁRIAS E CARREGAMENTO ───────────────────────────────────────
 def converter_ano(val):
-    if pd.isna(val): return None
+    if pd.isna(val) or str(val).strip() in ["", "nan", "None"]: return None
     try:
-        n = int(str(val).strip())
+        n = int(float(str(val).strip()))
         if n > 9999: return None
-        if n > 50: return 1900 + n if n < 100 else n
-        else: return 2000 + n if n < 100 else n
-    except (ValueError, TypeError): return None
+        if n < 100: return 1900 + n if n > 50 else 2000 + n
+        return n
+    except: return None
 
 @st.cache_data
 def carregar_dados(arquivo_csv):
@@ -137,11 +135,7 @@ def carregar_dados(arquivo_csv):
         os.path.join(os.path.dirname(__file__), "data", arquivo_csv),
         arquivo_csv,
     ]
-    csv_path = None
-    for c in caminhos:
-        if os.path.exists(c):
-            csv_path = c
-            break
+    csv_path = next((c for c in caminhos if os.path.exists(c)), None)
 
     if csv_path is None: return None, f"Arquivo {arquivo_csv} não encontrado."
 
@@ -153,12 +147,13 @@ def carregar_dados(arquivo_csv):
     
     df["Ano_Inicio_Int"] = df["Ano_Inicio"].apply(converter_ano)
     df["Ano_Fim_Int"]    = df["Ano_Fim"].apply(converter_ano)
-    df["Ano_Fim_Int"] = df["Ano_Fim_Int"].fillna(datetime.now().year)
+    df["Ano_Inicio_Int"] = pd.to_numeric(df["Ano_Inicio_Int"], errors='coerce').fillna(1990)
+    df["Ano_Fim_Int"] = pd.to_numeric(df["Ano_Fim_Int"], errors='coerce').fillna(datetime.now().year)
 
     return df, None
 
 def carregar_conversoes():
-    arquivo_csv = "conversao_wega_tecfil.csv"
+    arquivo_csv = "conversao.csv"
     caminhos = [
         os.path.join(os.path.dirname(__file__), arquivo_csv),
         os.path.join(os.path.dirname(__file__), "data", arquivo_csv),
@@ -181,16 +176,23 @@ def carregar_conversoes():
     return dict_conv
 
 def gerar_anos(row):
-    ini, fim = row["Ano_Inicio_Int"], row["Ano_Fim_Int"]
-    if ini is None: return []
-    return list(range(int(ini), int(fim) + 1))
+    try:
+        ini = int(float(row.get("Ano_Inicio_Int", 1990)))
+    except:
+        ini = 1990
+    try:
+        fim = int(float(row.get("Ano_Fim_Int", datetime.now().year)))
+    except:
+        fim = datetime.now().year
+        
+    return list(range(ini, fim + 1))
 
 # ─── NAVEGAÇÃO E ESTADO ────────────────────────────────────────────────────────
 if "pagina" not in st.session_state: st.session_state.pagina = "home"
 if "step" not in st.session_state: st.session_state.step = 1
 
 def reset():
-    for k in ["step","montadora","modelo","ano","classificacao"]:
+    for k in ["step","montadora","modelo","ano","classificacao", "transmissao"]:
         st.session_state.pop(k, None)
     st.session_state.step = 1
 
@@ -254,33 +256,28 @@ if st.session_state.pagina == "home":
             ir_para("cambio")
             st.rerun()
 
-
-# ==============================================================================
-# TELA DE CÂMBIO (EM DESENVOLVIMENTO)
-# ==============================================================================
-elif st.session_state.pagina == "cambio":
-    st.markdown('<div class="btn-voltar">', unsafe_allow_html=True)
-    if st.button("⬅️ Voltar ao Menu", key="voltar_cam"):
-        ir_para("home")
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div class="no-result" style="padding: 4rem;">
-        <span style="font-size: 3rem;">🚧</span><br><br>
-        <h2 style="color: var(--text-title); font-weight: 800; margin-bottom:0.5rem;">Módulo em Desenvolvimento</h2>
-        <p>Em breve você poderá consultar os filtros e aplicações para transmissões automáticas!</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-
 # ==============================================================================
 # TELAS DE CONSULTA
 # ==============================================================================
-elif st.session_state.pagina in ["filtros", "palhetas"]:
-    arquivo = "catalogo.csv" if st.session_state.pagina == "filtros" else "palhetas.csv"
-    titulo_pagina = "🛢️ CONSULTA DE REVISÃO (FILTROS)" if st.session_state.pagina == "filtros" else "🌧️ CONSULTA DE PALHETAS"
-    label_resultado = "Filtros" if st.session_state.pagina == "filtros" else "Palhetas"
+elif st.session_state.pagina in ["filtros", "palhetas", "cambio"]:
+    
+    is_cambio = st.session_state.pagina == "cambio"
+    
+    if st.session_state.pagina == "filtros":
+        arquivo = "catalogo.csv"
+        titulo_pagina = "🛢️ CONSULTA DE REVISÃO (FILTROS)"
+        label_resultado = "Peças"
+        passo_final = 5
+    elif st.session_state.pagina == "palhetas":
+        arquivo = "palhetas.csv"
+        titulo_pagina = "🌧️ CONSULTA DE PALHETAS"
+        label_resultado = "Peças"
+        passo_final = 5
+    else:
+        arquivo = "cambio.csv"
+        titulo_pagina = "⚙️ CONSULTA DE CÂMBIO (TRANSMISSÃO)"
+        label_resultado = "Filtros do Câmbio"
+        passo_final = 6 # Módulo de Câmbio ganha o passo extra!
     
     dict_conversoes = carregar_conversoes()
     
@@ -293,13 +290,13 @@ elif st.session_state.pagina in ["filtros", "palhetas"]:
     st.markdown(f"<h2 style='color: var(--text-title); font-weight: 900; margin-top: -1rem; margin-bottom: 1.5rem; letter-spacing: -0.02em;'>{titulo_pagina}</h2>", unsafe_allow_html=True)
 
     df, erro = carregar_dados(arquivo)
-    
-    if erro:
-        st.error(f"❌ {erro}")
-        st.info(f"Coloque o arquivo **{arquivo}** na mesma pasta que este script.")
-        st.stop()
+    if erro: st.error(f"❌ {erro}"); st.stop()
 
-    etapas = ["Montadora", "Modelo", "Ano", "Versão", label_resultado]
+    if is_cambio:
+        etapas = ["Montadora", "Modelo", "Ano", "Versão", "Transmissão", label_resultado]
+    else:
+        etapas = ["Montadora", "Modelo", "Ano", "Versão", label_resultado]
+
     def step_class(i):
         s = st.session_state.step
         if i + 1 < s:  return "done"
@@ -309,8 +306,7 @@ elif st.session_state.pagina in ["filtros", "palhetas"]:
     html_steps = '<div class="steps-bar">'
     for i, label in enumerate(etapas):
         cls = step_class(i)
-        # AJUSTE: Ícone 5 mostra o check quando st.step é 5
-        num_icon = "✓" if (cls == "done" or (st.session_state.step == 5 and i == 4)) else str(i + 1)
+        num_icon = "✓" if (cls == "done" or (st.session_state.step == passo_final and i == passo_final - 1)) else str(i + 1)
         html_steps += f'<div class="step-item"><div class="step-num {cls}">{num_icon}</div><span class="step-label {cls}">{label}</span></div>'
         if i < len(etapas) - 1: html_steps += '<span class="step-arrow">›</span>'
     html_steps += "</div>"
@@ -340,7 +336,7 @@ elif st.session_state.pagina in ["filtros", "palhetas"]:
                 if st.session_state.step < 3: st.session_state.step = 3
             elif st.session_state.step > 2:
                 st.session_state.step = 2
-                for k in ["modelo","ano","classificacao"]: st.session_state.pop(k, None)
+                for k in ["modelo","ano","classificacao", "transmissao"]: st.session_state.pop(k, None)
         else:
             st.selectbox("Modelo", ["— Selecione primeiro a montadora —"], disabled=True, label_visibility="collapsed")
 
@@ -359,7 +355,7 @@ elif st.session_state.pagina in ["filtros", "palhetas"]:
                 if st.session_state.step < 4: st.session_state.step = 4
             elif st.session_state.step > 3:
                 st.session_state.step = 3
-                for k in ["ano","classificacao"]: st.session_state.pop(k, None)
+                for k in ["ano","classificacao", "transmissao"]: st.session_state.pop(k, None)
         else:
             st.selectbox("Ano", ["— Selecione primeiro o modelo —"], disabled=True, label_visibility="collapsed")
 
@@ -368,7 +364,7 @@ elif st.session_state.pagina in ["filtros", "palhetas"]:
         st.markdown('<div class="select-title">④ Versão / Especificação</div>', unsafe_allow_html=True)
         if st.session_state.step >= 4:
             ano_int = st.session_state.ano
-            df_ano = df_mod[(df_mod["Ano_Inicio_Int"].astype(float) <= ano_int) & (df_mod["Ano_Fim_Int"].astype(float) >= ano_int)]
+            df_ano = df_mod[(df_mod["Ano_Inicio_Int"] <= ano_int) & (df_mod["Ano_Fim_Int"] >= ano_int)]
             versoes = sorted(df_ano["Classificacao_Modelo"].replace("nan","").fillna("Versão Única / Padrão").unique().tolist())
 
             versao_sel = st.selectbox("Versão", ["— Selecione —"] + versoes, label_visibility="collapsed", key="sel_versao")
@@ -377,25 +373,55 @@ elif st.session_state.pagina in ["filtros", "palhetas"]:
                 st.session_state.step = 5
             elif st.session_state.step > 4:
                 st.session_state.step = 4
-                st.session_state.pop("classificacao", None)
+                for k in ["classificacao", "transmissao"]: st.session_state.pop(k, None)
         else:
             st.selectbox("Versão", ["— Selecione primeiro o ano —"], disabled=True, label_visibility="collapsed")
 
+        # ─── CAMPO EXCLUSIVO DE CÂMBIO: EVITA ERROS DE COMPRA ───
+        if is_cambio:
+            st.markdown('<hr class="orange-divider">', unsafe_allow_html=True)
+            st.markdown('<div class="select-title">⑤ Modelo da Transmissão</div>', unsafe_allow_html=True)
+            if st.session_state.step >= 5:
+                filtro_class = df_ano["Classificacao_Modelo"].replace("nan","").fillna("") == st.session_state.classificacao
+                if st.session_state.classificacao == "":
+                    filtro_class = df_ano["Classificacao_Modelo"].isna() | (df_ano["Classificacao_Modelo"] == "") | (df_ano["Classificacao_Modelo"] == "nan")
+                
+                df_trans = df_ano[filtro_class]
+                transmissoes = sorted(df_trans["Codigo_Cambio"].dropna().unique().tolist())
+                
+                # Se só houver 1 transmissão disponível, seleciona-a automaticamente
+                if len(transmissoes) == 1:
+                    st.session_state.transmissao = transmissoes[0]
+                    st.session_state.step = 6
+                    st.selectbox("Transmissão", transmissoes, disabled=True, label_visibility="collapsed", key="sel_trans_auto")
+                else:
+                    trans_sel = st.selectbox("Transmissão", ["— Qual a transmissão do veículo? —"] + transmissoes, label_visibility="collapsed", key="sel_transmissao")
+                    if trans_sel != "— Qual a transmissão do veículo? —":
+                        st.session_state.transmissao = trans_sel
+                        st.session_state.step = 6
+                    elif st.session_state.step > 5:
+                        st.session_state.step = 5
+                        st.session_state.pop("transmissao", None)
+            else:
+                st.selectbox("Transmissão", ["— Selecione primeiro a versão —"], disabled=True, label_visibility="collapsed")
+
         st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("↺  Limpar Filtros", use_container_width=True):
-            reset()
-            st.rerun()
+        if st.button("↺  Limpar Filtros", use_container_width=True): reset(); st.rerun()
 
     with col_res:
-        st.markdown(f'<div class="select-title">⑤ Resultados: {label_resultado}</div>', unsafe_allow_html=True)
+        if is_cambio:
+            st.markdown(f'<div class="select-title">⑥ Resultados: {label_resultado}</div>', unsafe_allow_html=True)
+        else:
+            st.markdown(f'<div class="select-title">⑤ Resultados: {label_resultado}</div>', unsafe_allow_html=True)
 
-        if st.session_state.step < 5:
-            prox = {1:"montadora",2:"modelo",3:"ano",4:"versão"}.get(st.session_state.step, "versão")
+        if st.session_state.step < passo_final:
+            passos_nomes = {1:"a montadora", 2:"o modelo", 3:"o ano", 4:"a versão", 5:"a transmissão"}
+            prox = passos_nomes.get(st.session_state.step, "os dados")
             st.markdown(f"""
             <div class="no-result">
                 <span style="font-size:2rem">🔍</span><br><br>
                 Complete a seleção à esquerda.<br>
-                <strong style="color:#2ecc71">Próximo passo:</strong> escolha a {prox}.
+                <strong style="color:#2ecc71">Próximo passo:</strong> escolha {prox}.
             </div>
             """, unsafe_allow_html=True)
         else:
@@ -404,17 +430,24 @@ elif st.session_state.pagina in ["filtros", "palhetas"]:
             if st.session_state.classificacao == "":
                 filtro_class = df["Classificacao_Modelo"].isna() | (df["Classificacao_Modelo"] == "") | (df["Classificacao_Modelo"] == "nan")
 
-            df_res = df[
-                (df["Nome_Montadora"] == st.session_state.montadora) &
-                (df["Nome_Modelo"] == st.session_state.modelo) &
-                filtro_class &
-                (df["Ano_Inicio_Int"].astype(float) <= ano_int) &
-                (df["Ano_Fim_Int"].astype(float) >= ano_int)
-            ]
-
-            ano_ini = int(df_res["Ano_Inicio_Int"].iloc[0]) if not df_res.empty else "—"
-            ano_fim_raw = df_res["Ano_Fim_Int"].iloc[0] if not df_res.empty else None
-            ano_fim_str = str(int(ano_fim_raw)) if ano_fim_raw and int(ano_fim_raw) != datetime.now().year else "atual"
+            if is_cambio:
+                filtro_trans = df["Codigo_Cambio"] == st.session_state.transmissao
+                df_res = df[
+                    (df["Nome_Montadora"] == st.session_state.montadora) &
+                    (df["Nome_Modelo"] == st.session_state.modelo) &
+                    filtro_class &
+                    filtro_trans &
+                    (df["Ano_Inicio_Int"] <= ano_int) &
+                    (df["Ano_Fim_Int"] >= ano_int)
+                ]
+            else:
+                df_res = df[
+                    (df["Nome_Montadora"] == st.session_state.montadora) &
+                    (df["Nome_Modelo"] == st.session_state.modelo) &
+                    filtro_class &
+                    (df["Ano_Inicio_Int"] <= ano_int) &
+                    (df["Ano_Fim_Int"] >= ano_int)
+                ]
 
             st.markdown(f"""
             <div class="summary-bar">
@@ -437,12 +470,18 @@ elif st.session_state.pagina in ["filtros", "palhetas"]:
                 def card(icone, tipo, codigo):
                     codigo_limpo = str(codigo).replace('\xa0', '').strip().upper()
                     if pd.isna(codigo) or codigo_limpo in ["", "NAN", "NONE"]:
-                        return f'<div class="filter-card empty"><span class="filter-icon" style="opacity:.3">{icone}</span><div class="filter-type">{tipo}</div><div class="filter-code empty">não usa / ñ disp.</div></div>'
+                        return f'<div class="filter-card empty"><span class="filter-icon" style="opacity:.3">{icone}</span><div class="filter-type">{tipo}</div><div class="filter-code empty">ñ disp.</div></div>'
                     
-                    tecfil_str = dict_conversoes.get(codigo_limpo, "")
-                    html_tecfil = f'<div class="filter-tecfil">⇄ TECFIL: {tecfil_str}</div>' if tecfil_str else ''
+                    if st.session_state.pagina == "filtros":
+                        conv = dict_conversoes.get(codigo_limpo, "")
+                        html_tec = f'<div class="filter-tecfil">⇄ TECFIL: {conv}</div>' if conv else ''
+                        return f'<div class="filter-card"><span class="filter-icon">{icone}</span><div class="filter-type">{tipo}</div><div class="filter-code">{str(codigo).strip()}</div>{html_tec}</div>'
                     
-                    return f'<div class="filter-card"><span class="filter-icon">{icone}</span><div class="filter-type">{tipo}</div><div class="filter-code">{str(codigo).strip()}</div>{html_tecfil}</div>'
+                    if len(str(codigo)) > 20: fonte = "1.0rem"
+                    elif len(str(codigo)) > 12: fonte = "1.2rem"
+                    else: fonte = "1.6rem"
+                    
+                    return f'<div class="filter-card"><span class="filter-icon">{icone}</span><div class="filter-type">{tipo}</div><div class="filter-code" style="font-size:{fonte};">{str(codigo).strip()}</div></div>'
 
                 html_cards = """
                 <style>
@@ -454,7 +493,6 @@ elif st.session_state.pagina in ["filtros", "palhetas"]:
                         font-family: 'Inter', system-ui, sans-serif;
                         -webkit-font-smoothing: antialiased;
                         -moz-osx-font-smoothing: grayscale;
-                        text-rendering: optimizeLegibility;
                     }
                     .result-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
                     .filter-card { background: #ffffff; border: 1px solid #dee2e6; border-radius: 12px; padding: 1.2rem 1.4rem; position: relative; overflow: hidden; }
@@ -462,25 +500,9 @@ elif st.session_state.pagina in ["filtros", "palhetas"]:
                     .filter-card.empty::before { background: #dee2e6; }
                     .filter-icon { font-size: 1.4rem; display: block; margin-bottom: 0.4rem; }
                     .filter-type { font-size: 0.75rem; font-weight: 800; color: #6b7080; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
-                    
-                    /* Texto principal com fonte mais limpa */
-                    .filter-code { 
-                        font-size: 1.7rem; 
-                        font-weight: 900; 
-                        color: #1a1d27; 
-                        letter-spacing: -0.02em; 
-                        line-height: 1; 
-                        transform: translateZ(0); 
-                    }
-                    .filter-code.empty { color: #6b7080; font-size: 1rem; font-weight: 500; font-style: italic; }
-                    .filter-tecfil { 
-                        font-size: 0.85rem; 
-                        font-weight: 800; 
-                        color: #e67e22; 
-                        margin-top: 0.5rem; 
-                        letter-spacing: 0.02em; 
-                        transform: translateZ(0); 
-                    }
+                    .filter-code { font-weight: 900; color: #1a1d27; letter-spacing: -0.02em; line-height: 1.3; transform: translateZ(0); }
+                    .filter-code.empty { color: #6b7080; font-size: 1rem !important; font-weight: 500; font-style: italic; }
+                    .filter-tecfil { font-size: 0.85rem; font-weight: 800; color: #e67e22; margin-top: 0.5rem; transform: translateZ(0); }
                     
                     @media (prefers-color-scheme: dark) {
                         .filter-card { background: #1a1d27; border-color: #2a2d3a; }
@@ -488,7 +510,6 @@ elif st.session_state.pagina in ["filtros", "palhetas"]:
                         .filter-type { color: #8b8fa8; }
                         .filter-code { color: #ffffff; }
                         .filter-code.empty { color: #555870; }
-                        .filter-tecfil { color: #f39c12; }
                     }
                 </style>
                 <div class="result-grid">
@@ -498,22 +519,31 @@ elif st.session_state.pagina in ["filtros", "palhetas"]:
                     html_cards += card("💨", "Filtro de Ar", row.get("Filtro_Ar"))
                     html_cards += card("🛢️", "Filtro de Óleo", row.get("Filtro_Oleo"))
                     html_cards += card("⛽", "Filtro Combustível", row.get("Filtro_Combustivel"))
-                    html_cards += card("❄️", "Filtro de Cabine", row.get("Filtro_Cabine"))
-                else:
+                    html_cards += card("🌬️", "Filtro de Cabine", row.get("Filtro_Cabine"))
+                elif st.session_state.pagina == "palhetas":
                     html_cards += card("🚘", "Motorista", row.get("Palheta_Motorista"))
                     html_cards += card("💺", "Passageiro", row.get("Palheta_Passageiro"))
                     html_cards += card("🔙", "Traseira", row.get("Palheta_Traseira"))
                     html_cards += card("🪝", "Tipo de Encaixe", row.get("Tipo_Gancho"))
+                else:
+                    # Agora mostra a linha com todos os filtros juntos (separados por /)
+                    html_cards += card("⚙️", "Filtros Necessários", row.get("Filtro_Cambio"))
+                    html_cards += card("🔀", "Transmissão", row.get("Codigo_Cambio"))
                     
                 html_cards += "</div>"
-                components.html(html_cards, height=320)
+                
+                altura_iframe = 320 if st.session_state.pagina == "filtros" else 250
+                components.html(html_cards, height=altura_iframe)
 
                 versao_texto = st.session_state.classificacao if st.session_state.classificacao else "Versão Padrão"
+                if is_cambio:
+                    versao_texto += f" | Câmbio: {st.session_state.transmissao}"
+                
                 st.markdown(f"""
-                <div style="margin-top:5px;padding:0.8rem 1.2rem;background:var(--bg-card);
+                <div style="margin-top:0.5rem;padding:0.8rem 1.2rem;background:var(--bg-card);
                             border-radius:8px;border:1px solid var(--border-line);font-size:0.82rem;color:var(--text-sub);">
                     <span style="color:#2ecc71;font-weight:800;text-transform:uppercase;
-                                 font-size:0.7rem;letter-spacing:0.05em;">Observações / Versão:</span><br>
+                                 font-size:0.7rem;letter-spacing:0.05em;">Observações / Configuração:</span><br>
                     <span style="color:var(--text-title); font-weight: 500;">{versao_texto}</span>
                 </div>
                 """, unsafe_allow_html=True)
