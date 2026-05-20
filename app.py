@@ -200,7 +200,7 @@ def ir_para(pagina):
     reset()
     st.session_state.pagina = pagina
 
-# ─── HEADER FIXO ──────────────────────────────────────────────────────────────
+# ─── HEADER ──────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="main-header">
     <span class="logo-icon">🔧</span>
@@ -275,9 +275,9 @@ elif st.session_state.pagina in ["filtros", "palhetas", "cambio"]:
         passo_final = 5
     else:
         arquivo = "cambio.csv"
-        titulo_pagina = "⚙️ CONSULTA DE CÂMBIO (TRANSMISSÃO)"
+        titulo_pagina = "⚙️ CONSULTA DE FILTROS DE CÂMBIO"
         label_resultado = "Filtros do Câmbio"
-        passo_final = 6 # Módulo de Câmbio ganha o passo extra!
+        passo_final = 6
     
     dict_conversoes = carregar_conversoes()
     
@@ -377,7 +377,7 @@ elif st.session_state.pagina in ["filtros", "palhetas", "cambio"]:
         else:
             st.selectbox("Versão", ["— Selecione primeiro o ano —"], disabled=True, label_visibility="collapsed")
 
-        # ─── CAMPO EXCLUSIVO DE CÂMBIO: EVITA ERROS DE COMPRA ───
+        # ─── CAMPO EXCLUSIVO DE CÂMBIO ───
         if is_cambio:
             st.markdown('<hr class="orange-divider">', unsafe_allow_html=True)
             st.markdown('<div class="select-title">⑤ Modelo da Transmissão</div>', unsafe_allow_html=True)
@@ -526,13 +526,19 @@ elif st.session_state.pagina in ["filtros", "palhetas", "cambio"]:
                     html_cards += card("🔙", "Traseira", row.get("Palheta_Traseira"))
                     html_cards += card("🪝", "Tipo de Encaixe", row.get("Tipo_Gancho"))
                 else:
-                    # Agora mostra a linha com todos os filtros juntos (separados por /)
                     html_cards += card("⚙️", "Filtros Necessários", row.get("Filtro_Cambio"))
                     html_cards += card("🔀", "Transmissão", row.get("Codigo_Cambio"))
                     
                 html_cards += "</div>"
                 
-                altura_iframe = 320 if st.session_state.pagina == "filtros" else 250
+               # 📏 ALTURA DINÂMICA: Ajuste milimétrico para cada módulo
+                if st.session_state.pagina == "filtros":
+                    altura_iframe = 340  # 2 linhas de cartões + conversão Tecfil
+                elif st.session_state.pagina == "palhetas":
+                    altura_iframe = 290  # 2 linhas de cartões limpos
+                else:
+                    altura_iframe = 160  # 1 linha de cartões (Câmbio)
+                    
                 components.html(html_cards, height=altura_iframe)
 
                 versao_texto = st.session_state.classificacao if st.session_state.classificacao else "Versão Padrão"
