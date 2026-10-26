@@ -48,14 +48,21 @@ git clone https://github.com/guilhermehcaguiar/AutoFilter-Search
 cd AutoFilter-Search
 ```
 
-**2. Instale as dependências**
+Requer Python **3.11 ou superior**. No Linux, use `./INICIAR.sh`; no Windows, abra `INICIAR.bat`. Os atalhos criam ou reparam o ambiente `.venv` quando necessário. A instalação das dependências precisa de internet; as consultas funcionam offline.
+
+**2. Instale as dependências manualmente (opcional)**
 ```bash
-pip install -r requirements.txt
+python -m venv .venv
+# Linux/macOS:
+source .venv/bin/activate
+# Windows:
+# .venv\Scripts\activate
+python -m pip install -r requirements.txt
 ```
 
 **3. Rode o sistema**
 ```bash
-streamlit run app.py
+python -m streamlit run app.py
 ```
 
 O sistema abrirá automaticamente no navegador em `http://localhost:8501`.
@@ -64,7 +71,17 @@ O sistema abrirá automaticamente no navegador em `http://localhost:8501`.
 
 ## 🗂️ Formato do CSV
 
-Os arquivos dentro da pasta data/ (ou na raiz) devem usar ; como separador. As 5 primeiras colunas são padrão para o sistema de funil.
+Os arquivos dentro da pasta `data/` (ou na raiz) devem usar `;` como separador. São aceitos UTF-8 (com ou sem BOM) e Windows-1252. Com cabeçalhos, as colunas podem estar em qualquer ordem. Exportações sem cabeçalhos usam a ordem das tabelas abaixo; colunas extras ao final são preservadas. No câmbio, a versão vem depois dos anos.
+
+Anos podem ter dois ou quatro dígitos, inclusive datas como `12/06`. Um intervalo como `14 – 16` na coluna inicial é interpretado como 2014–2016 quando o fim estiver vazio. Com início informado, fim vazio significa o ano atual. Registros sem início confirmado aparecem na opção **Ano não informado**, sem presumir 1990 nem misturar a aplicação com anos conhecidos. Registros com períodos inválidos são ignorados na consulta e identificados nos avisos do módulo. Erros de estrutura do CSV são apresentados na interface. As correções dos dados e suas fontes estão em [Correções dos catálogos](docs/correcoes-dados.md).
+
+Alterações nos CSVs são lidas na próxima interação com a aplicação. Quando uma seleção corresponde a várias aplicações de peças, todas são exibidas separadamente como “Aplicação possível”, mantendo a associação entre os códigos e os encaixes. Essas opções não confirmam configurações distintas do veículo: a interface orienta conferir o código do motor, o chassi ou a referência da peça instalada antes de escolher. Versões vazias aparecem como “Versão Única / Padrão”.
+
+Após selecionar montadora, modelo e ano, o campo **Cilindrada do motor** aparece diretamente nos módulos Revisão ou Câmbio e filtra as versões e os resultados por valores como 1.6 ou 2.0 L. “Todas as cilindradas” mantém a consulta completa; “Não informada” consulta os registros sem esse dado. Trocar a cilindrada limpa a versão e a transmissão anteriores. Por exemplo: **Revisão → Audi → A3 → 2010 → 2.0 L**; **Revisão → Chevrolet/GM → Corsa → 2010** permite escolher entre 1.4 L e 1.6 L.
+
+Em CSVs com cabeçalhos, a coluna opcional `Litragem_Motor` pode informar a cilindrada (`1.6`, `1,6`, `2.0` ou `1.6 / 1.8`). Sem essa coluna, são aproveitados valores explícitos na versão; na exportação sem cabeçalhos de câmbio, também é lida a primeira coluna extra. Valores como XJ 6/8/12, V6 ou 16V não são tratados como cilindrada.
+
+Na revisão, `data/cilindradas.csv` complementa 1.776 registros com cilindradas obtidas do catálogo online oficial da Wega. A associação exige montadora, modelo, versão e período correspondentes, combustível compatível e uma única cilindrada encontrada. Casos ambíguos ficam sem atribuição automática. O complemento mantém o motor original, a URL da fonte e a data da consulta, e funciona offline. A aplicação só utiliza a associação se todos os campos originais da linha, incluindo os códigos das peças, continuarem iguais.
 
 ### 1. Revisão (catalogo.csv)
 | Coluna | Descrição |
@@ -119,6 +136,17 @@ Os arquivos dentro da pasta data/ (ou na raiz) devem usar ; como separador. As 5
 - [Python 3](https://www.python.org/)
 - [Streamlit](https://streamlit.io/)
 - [Pandas](https://pandas.pydata.org/)
+
+## Verificação
+
+Com o ambiente virtual ativado:
+
+```bash
+python -m unittest discover -s tests -v
+python -m pip check
+```
+
+Os testes cobrem leitura dos catálogos, datas, conversões e os fluxos de consulta, troca de seleção, limpeza e resultados alternativos dos módulos Streamlit.
 
 ---
 

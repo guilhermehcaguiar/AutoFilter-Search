@@ -1,36 +1,36 @@
 @echo off
+setlocal
 title Sistema Atend-Car - Filtros
-echo Verificando ambiente e dependencias...
-
-:: Entra na pasta do projeto
 cd /d "%~dp0"
 
-:: 1. Verifica se a pasta .venv existe. Se não existir, ele cria e instala tudo.
-if not exist .venv (
-    echo [AVISO] Ambiente virtual nao encontrado. Iniciando instalacao...
-    echo [AVISO] Isso pode demorar uns 2 minutos e precisa de internet apenas agora.
-    
-    :: Cria o ambiente virtual
+if not exist ".venv\Scripts\python.exe" (
+    echo Criando ambiente virtual...
     python -m venv .venv
-    
-    :: Ativa e instala as dependencias
-    call .venv\Scripts\activate
-    python -m pip install --upgrade pip
-    pip install -r requirements.txt
-    
-    echo [OK] Instalacao concluida com sucesso!
-) else (
-    :: Se a pasta já existir, ele apenas ativa
-    call .venv\Scripts\activate
+    if errorlevel 1 goto erro
 )
 
-:: 2. Inicia o sistema
-echo [OK] Iniciando o sistema da oficina...
-python -m streamlit run app.py
+".venv\Scripts\python.exe" -c "import streamlit, pandas" >nul 2>&1
+if errorlevel 1 goto instalar
+".venv\Scripts\python.exe" -m pip check >nul 2>&1
+if errorlevel 1 goto instalar
+goto iniciar
 
-:: Se o sistema fechar por erro, a janela nao fecha sozinha
-if %errorlevel% neq 0 (
-    echo.
-    echo [ERRO] Ocorreu um problema ao iniciar o sistema.
-    pause
-)
+:instalar
+echo Instalando ou reparando dependencias. Esta etapa precisa de internet.
+".venv\Scripts\python.exe" -m ensurepip --upgrade
+if errorlevel 1 goto erro
+".venv\Scripts\python.exe" -m pip install -r requirements.txt
+if errorlevel 1 goto erro
+".venv\Scripts\python.exe" -m pip check
+if errorlevel 1 goto erro
+
+:iniciar
+echo Iniciando o sistema...
+".venv\Scripts\python.exe" -m streamlit run app.py
+if errorlevel 1 goto erro
+exit /b 0
+
+:erro
+echo [ERRO] Nao foi possivel preparar ou iniciar o sistema.
+pause
+exit /b 1
